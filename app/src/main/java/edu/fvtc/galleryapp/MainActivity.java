@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -20,9 +19,6 @@ import java.lang.reflect.Type;
 
 public class MainActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
 
-    private static final int MENU_DUSKULL = R.id.duskull;
-    private static final int MENU_GARCHOMP = R.id.garchomp;
-    private static final int MENU_ELECTABUZZ = R.id.electabuzz;
     public static final String TAG = "MainActivity";
 
     Pokemon[] pokemons = {
@@ -39,6 +35,23 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
     TextView tvCard;
     GestureDetector gestureDetector;
 
+     @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        imgCard = findViewById(R.id.ivPokemon);
+        tvCard = findViewById(R.id.tvInfo);
+
+        //Front images
+        imgCard.setVisibility(View.VISIBLE);
+        imgCard.setImageResource(imgs[cardNo]);
+
+        tvCard.setText(pokemons[cardNo].getName());
+
+        gestureDetector = new GestureDetector(this, this);
+        Log.d(TAG, "onCreate: Complete");
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -47,23 +60,19 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-         switch (item.getItemId()) {
-            case R.id.duskull:
-                cardNo = 0;
-                updateCard();
-                return true;
-            case R.id.garchomp:
-                cardNo = 1;
-                updateCard();
-                return true;
-            case R.id.electabuzz:
-                cardNo = 2;
-                updateCard();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.duskull) {
+            cardNo = 0;
+        } else if (id == R.id.garchomp) {
+            cardNo = 1;
+        } else if (id == R.id.electabuzz) {
+            cardNo = 2;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
+        updateCard();
+        return true;
     }
 
     public void updateCard(){
@@ -87,23 +96,6 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             Log.e(TAG, "onSingleTapUp " + e.getMessage());
             e.printStackTrace();
         }
-    }
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        imgCard = findViewById(R.id.ivPokemon);
-        tvCard = findViewById(R.id.tvInfo);
-
-        //Front images
-        imgCard.setVisibility(View.VISIBLE);
-        imgCard.setImageResource(imgs[cardNo]);
-
-        tvCard.setText(pokemons[cardNo].getName());
-
-        gestureDetector = new GestureDetector(this, this);
-        Log.d(TAG, "onCreate: Complete");
     }
 
     @Override
