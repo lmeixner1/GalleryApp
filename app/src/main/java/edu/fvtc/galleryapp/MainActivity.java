@@ -12,9 +12,14 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 
 public class MainActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
@@ -27,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             new Pokemon("Electabuzz", "It loves to feed on strong electricity. It occasionally appears around large power plants and so on.")
     };
 
+    int[] textFiles = {R.raw.duskull, R.raw.garchomp, R.raw.electabuzz};
     int[] imgs = {R.drawable.duskull, R.drawable.garchomp, R.drawable.electabuzz};
     int[] imgBacks = {R.drawable.duskull2, R.drawable.garchomp2, R.drawable.electabuzz2};
     int cardNo = 0;
@@ -35,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
     TextView tvCard;
     GestureDetector gestureDetector;
 
-     @Override
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -43,63 +49,64 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         imgCard = findViewById(R.id.ivPokemon);
         tvCard = findViewById(R.id.tvInfo);
 
-        //Front images
-        imgCard.setVisibility(View.VISIBLE);
-        imgCard.setImageResource(imgs[cardNo]);
-
-        tvCard.setText(pokemons[cardNo].getName());
+        updateCard();
 
         gestureDetector = new GestureDetector(this, this);
         Log.d(TAG, "onCreate: Complete");
     }
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        return true;
+
+    private void updateCard()
+    {
+        pokemons[cardNo].setEntry(readFile(textFiles[cardNo]));
+
+        isFront = true;
+        imgCard.setVisibility(View.VISIBLE);
+        imgCard.setImageResource(imgs[cardNo]);
+        tvCard.setText(pokemons[cardNo].getName());
+
+
     }
 
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.duskull) {
-            cardNo = 0;
-        } else if (id == R.id.garchomp) {
-            cardNo = 1;
-        } else if (id == R.id.electabuzz) {
-            cardNo = 2;
-        } else {
-            return super.onOptionsItemSelected(item);
-        }
-        updateCard();
-        return true;
-    }
+    private String readFile(int fileId)
+    {
+        InputStream inputStream;
+        InputStreamReader inputStreamReader;
+        BufferedReader bufferedReader;
+        StringBuffer stringBuffer;
 
-    public void updateCard(){
         try {
-            if (isFront) {
-                imgCard.setVisibility(View.VISIBLE);
-                imgCard.setImageResource(imgBacks[cardNo]);
-                tvCard.setText(pokemons[cardNo].getEntry());
+            inputStream = getResources().openRawResource(fileId);
+            inputStreamReader = new InputStreamReader(inputStream);
+            bufferedReader = new BufferedReader(inputStreamReader);
+            stringBuffer = new StringBuffer();
 
-            } else {
-                imgCard.setVisibility(View.VISIBLE);
-                tvCard.setText(pokemons[cardNo].getName());
-                imgCard.setImageResource(imgs[cardNo]);
+            String data;
 
+            while((data = bufferedReader.readLine()) != null)
+            {
+                stringBuffer.append(data).append("\n");
             }
 
-            isFront = !isFront;
-            Log.d(TAG, "onSingleTapUp: ");
+            // Clean up objects
+            bufferedReader.close();
+            inputStreamReader.close();
+            inputStream.close();
 
-        } catch (Exception e) {
-            Log.e(TAG, "onSingleTapUp " + e.getMessage());
+            Log.d(TAG, "readFile: " + stringBuffer.toString());
+            return stringBuffer.toString();
+        }
+        catch (Exception e)
+        {
+            Log.d(TAG, "readFile: " + e.getMessage());
             e.printStackTrace();
+            return e.getMessage();
         }
     }
 
+    // one of those things that I have to remember!
     @Override
-    public boolean onTouchEvent(MotionEvent motionEvent) {
+    public boolean onTouchEvent(MotionEvent motionEvent)
+    {
         return gestureDetector.onTouchEvent(motionEvent);
     }
 
@@ -119,26 +126,29 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         Log.d(TAG, "onSingleTapUp: ");
 
         String message;
+
         try {
-            if (isFront) {
-                message = "Go to back";
+            if(isFront){
+                //Go to back
+                message = "Got to back";
                 imgCard.setVisibility(View.VISIBLE);
                 imgCard.setImageResource(imgBacks[cardNo]);
                 tvCard.setText(pokemons[cardNo].getEntry());
-
-            } else {
-                message = "Go to Front";
+            }
+            else{
+                //Go to front
+                message = "Got to front";
                 imgCard.setVisibility(View.VISIBLE);
-                tvCard.setText(pokemons[cardNo].getName());
                 imgCard.setImageResource(imgs[cardNo]);
-
+                tvCard.setText(pokemons[cardNo].getName());
             }
 
             isFront = !isFront;
             Log.d(TAG, "onSingleTapUp: " + message);
-
-        } catch (Exception e) {
-            Log.e(TAG, "onSingleTapUp " + e.getMessage());
+        }
+        catch(Exception e)
+        {
+            Log.e(TAG, "onSingleTapUp " + e.getMessage() );
             e.printStackTrace();
         }
 
@@ -152,11 +162,69 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
     @Override
     public void onLongPress(@NonNull MotionEvent e) {
+        Log.d(TAG, "onLongPress: ");
 
     }
 
     @Override
-    public boolean onFling(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
-        return false;
+    public boolean onFling(@Nullable MotionEvent motionEvent1, @NonNull MotionEvent motionEvent2, float velocityX, float velocityY) {
+        Log.d(TAG, "onFling: ");
+
+        int numCards = pokemons.length;
+
+        try {
+            // Decide which direction I want to fling
+            // Only tracking left and right along the X
+            int x1= (int) (motionEvent1 != null ? motionEvent1.getX() : 0);
+            int x2= (int)motionEvent2.getX();
+
+            if(x1 < x2)
+            {
+                Animation move = AnimationUtils.loadAnimation(this, R.anim.move_right);
+                move.setAnimationListener(new AnimationListener());
+                imgCard.startAnimation(move);
+                tvCard.startAnimation(move);
+                // swipe right
+                Log.d(TAG, "onFling: Right");
+                cardNo = (cardNo - 1 + numCards) % numCards;
+            } else {
+                Animation move = AnimationUtils.loadAnimation(this, R.anim.move_left);
+                move.setAnimationListener(new AnimationListener());
+                imgCard.startAnimation(move);
+                tvCard.startAnimation(move);
+                // swipe left
+                Log.d(TAG, "onFling: Left");
+                cardNo = (cardNo + 1) % numCards;
+            }
+            //updateCard();
+
+        }
+        catch (Exception ex)
+        {
+            Log.e(TAG, "onFling " + ex.getMessage() );
+            ex.printStackTrace();
+        }
+
+        return true;
+    }
+
+    private class AnimationListener implements Animation.AnimationListener
+    {
+
+        @Override
+        public void onAnimationStart(Animation animation) {
+
+        }
+
+        @Override
+        public void onAnimationEnd(Animation animation) {
+            Log.d(TAG, "onAnimationEnd: ");
+            updateCard();
+        }
+
+        @Override
+        public void onAnimationRepeat(Animation animation) {
+
+        }
     }
 }
